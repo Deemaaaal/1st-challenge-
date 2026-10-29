@@ -31,38 +31,13 @@ struct profile_page: View {
     @State private var heightWhole = 160
     @State private var heightDecimal = 0
     @State private var showDoesItFit = false
+    // Uses the same parser as onboarding, so Arabic digits and commas are read correctly.
     private func measurementValue(_ text: String, fallback: Double) -> Double {
-        Double(text) ?? fallback
+        data.number(from: text) ?? fallback
     }
-    private var bodyShape: String {
-        let shoulderOrBust = bust
-        let waistRatio = waist / max(shoulderOrBust, hips, 1)
-        
-        if waistRatio <= 0.75 &&
-            abs(bust - hips) / max(bust, hips, 1) <= 0.10 {
-            return "Hourglass-Type"
-        } else if hips > bust * 1.10 {
-            return "Pear-Type"
-        } else if bust > hips * 1.10 {
-            return "Inverted Triangle-Type"
-        } else {
-            return "Apple-Type"
-        }
-        
-    }
-    private var bodyShapeImage: String {
-        switch bodyShape {
-        case "Hourglass-Type":
-            return "hourglass"
-        case "Pear-Type":
-            return "pear"
-        case "Inverted Triangle-Type":
-            return "Inverted Tringle"
-        case "Apple-Type":
-            return "apple"
-        default:
-            return "hourglass"
-        }
+    // Same formula as the rest of the app (BodyShape.from).
+    private var bodyShape: BodyShape {
+        BodyShape.from(bust: bust, waist: waist, hips: hips)
     }
     
     private func saveToData() {
@@ -91,14 +66,14 @@ struct profile_page: View {
                 ))
                 .frame(width: 90, height: 90)
                 .overlay {
-                    Image(bodyShapeImage)
+                    Image(bodyShape.imageName)
                         .resizable()
                         .scaledToFit()
                         .frame(width: 90, height: 90)
                 }
                 .offset(y:-260)
             
-            Text(bodyShape)
+            Text(bodyShape.title)
                 .font(.system(size: 25, weight: .bold))
                 .foregroundStyle(Color(
                     red: 43.0 / 255.0,
@@ -133,6 +108,8 @@ struct profile_page: View {
                     
                     
                     Button {
+                        bustWhole = Int(bust)
+                        bustDecimal = Int((bust * 10).rounded()) % 10
                         selectedBust = bust
                         showBustPicker = true
                     } label: {
@@ -292,20 +269,21 @@ struct profile_page: View {
             ))
             .clipShape(RoundedRectangle(cornerRadius: 22))
             
-            NavigationLink(destination: DoesItFit()) {
-                Text("Does it fit?")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundStyle(Color.white)
-                    .frame(width: 328, height: 47)
-                    .background(Color(
-                        red: 209.0 / 255.0,
-                        green: 113.0 / 255.0,
-                        blue: 24.0 / 255.0
-                    ))
-                    .clipShape(RoundedRectangle(cornerRadius: 25))
+            // Pinned to the bottom, in the same spot as the main button on other screens
+            VStack {
+                Spacer()
+
+                Button("Does it fit?") {
+                    showDoesItFit = true
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.horizontal, 24)
+                .padding(.bottom, 54)
             }
-            .buttonStyle(.plain)
-            .offset(y: 250)
+        }
+        // Setting showDoesItFit to false pops Does it Fit? and the result screen together
+        .navigationDestination(isPresented: $showDoesItFit) {
+            DoesItFit(backToProfile: { showDoesItFit = false })
         }
         
         .sheet(isPresented: $showBustPicker) {

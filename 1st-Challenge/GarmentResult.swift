@@ -13,6 +13,7 @@ struct GarmentResult: View {
 
     @State private var verdict: FitVerdict?
     @State private var errorMessage: String?
+    @State private var contentHeight: CGFloat = 0
 
     private let cardColor = Color(red: 0.93, green: 0.90, blue: 0.85)
     private let orange = Color(red: 209.0 / 255.0, green: 113.0 / 255.0, blue: 24.0 / 255.0)
@@ -61,10 +62,12 @@ struct GarmentResult: View {
         VStack(spacing: 0) {
             // Verdict
             VStack(spacing: 6) {
+                // One line for every verdict, so the box below always starts at the same height
                 Text(headline)
-                    .font(.system(size: 34, weight: .bold, design: .serif))
+                    .font(.system(size: 32, weight: .bold, design: .serif))
                     .foregroundStyle(accent)
-                    .multilineTextAlignment(.center)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
 
                 if showsShapeLine {
                     Text("For your \(bodyShape.title) shape")
@@ -74,25 +77,24 @@ struct GarmentResult: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 12)
+            .padding(.bottom, 40)
 
-            Spacer(minLength: 20)
-
-            // Styling box, sitting just above the buttons
+            // Styling box, a fixed distance under the verdict
             VStack(alignment: .leading, spacing: 12) {
                 Text("Flattery and styling")
                     .font(.system(size: 20, weight: .bold))
 
-                // Sizes to its text; scrolls only when the text is too long
-                ViewThatFits(in: .vertical) {
+                // Sizes to its text (up to 240 pt), and scrolls only when the text is longer
+                ScrollView {
                     boxContent
-                    ScrollView {
-                        boxContent
-                    }
-                    .scrollBounceBehavior(.basedOnSize)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                            contentHeight = height
+                        }
                 }
+                .frame(height: min(contentHeight, 240))
+                .scrollBounceBehavior(.basedOnSize)
             }
             .foregroundStyle(.black)
-            .frame(maxHeight: 300, alignment: .topLeading)
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardColor)
@@ -103,6 +105,8 @@ struct GarmentResult: View {
                     .frame(width: 5)
             }
             .clipShape(RoundedRectangle(cornerRadius: 16))
+
+            Spacer(minLength: 0)
         }
     }
 
@@ -115,10 +119,10 @@ struct GarmentResult: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if let alternative = verdict?.alternative {
+            if let verdict, let tip = verdict.tip {
                 VStack(alignment: .leading, spacing: 6) {
-                    sectionLabel("TRY INSTEAD")
-                    Text(alternative)
+                    sectionLabel(verdict.tipLabel)
+                    Text(tip)
                         .font(.system(size: 16))
                         .fixedSize(horizontal: false, vertical: true)
                 }

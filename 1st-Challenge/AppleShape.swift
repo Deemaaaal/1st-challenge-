@@ -23,14 +23,12 @@ struct Appleshape: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                Text("Apple-Type")
+                Text("Your Results")
                     .font(.title)
                     .fontWeight(.bold)
                     .padding(.top, 20)
 
-                GarmentResult(image: image, bodyShape: .apple, illustration: "Appleshape")
-
-                Spacer()
+                GarmentResult(image: image, bodyShape: .apple)
 
                 VStack(spacing: 6) {
                     // Retake photo يودّي للكاميرا

@@ -100,7 +100,7 @@ class OnboardingData {
         return "Enter a value between \(Int(range.lowerBound)) and \(Int(range.upperBound)) cm."
     }
 
-    private func number(from text: String) -> Double? {
+    func number(from text: String) -> Double? {
         var cleaned = text.trimmingCharacters(in: .whitespaces)
 
         let arabicDigits = Array("٠١٢٣٤٥٦٧٨٩")

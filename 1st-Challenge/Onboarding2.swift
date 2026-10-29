@@ -95,38 +95,23 @@ struct MeasurementsView: View {
                 // pushes everything up and lifts the button from the bottom
                 Spacer()
 
-                Button(action: {
-                    showProfile = true
-                })
-                {
-                    Text("See my results")
-                        .font(.title3)
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(data.page2Complete
-                                    ? Color(red: 0.82, green: 0.45, blue: 0.12)
-                                    : Color(red: 0.90, green: 0.75, blue: 0.65))
-                        .cornerRadius(30)
-                }
-                .buttonStyle(.plain)
-                .disabled(!data.page2Complete)
-                .animation(.easeInOut(duration: 0.3), value: data.page2Complete)
+                // Same width and height from the bottom as the buttons on other screens
+                VStack(spacing: 6) {
+                    Button("See my results") {
+                        showProfile = true
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(!data.page2Complete)
+                    .animation(.easeInOut(duration: 0.3), value: data.page2Complete)
 
-                
-                ///Delete back button
-                Button {
-                    dismiss()
-                } label: {
-                    Text("Back")
-                        .font(.title3)
-                        .fontWeight(.bold)
+                    ///Delete back button
+                    Button("Back") {
+                        dismiss()
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
                 }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .frame(height: 44)
-                .padding(.bottom, 56)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 6)
             }
             .padding(.horizontal, 16)
         }

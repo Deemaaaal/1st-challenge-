@@ -13,6 +13,9 @@ import UIKit
 struct DoesItFit: View {
 @Environment(\.dismiss) private var dismiss
 
+/// Pops back to the profile screen from the result screen.
+var backToProfile: () -> Void = {}
+
 @State private var selectedPhoto: PhotosPickerItem?
 @State private var garmentImage: UIImage?
 @State private var showPicker = false
@@ -170,39 +173,18 @@ HStack(spacing: 10) {
 Image(systemName: "camera")
 Text("Take Photo")
 }
-.font(
-.system(size: 19, weight: .semibold)
-)
-.foregroundColor(.white)
-.frame(maxWidth: .infinity)
-.frame(height: 54)
-.background(Color(
-    red: 209.0 / 255.0,
-    green: 113.0 / 255.0,
-    blue: 24.0 / 255.0
-))
-.clipShape(Capsule())
 }
-.buttonStyle(.plain)
+.buttonStyle(PrimaryButtonStyle())
 .sheet(isPresented: $showCamera) {
 CameraPicker(image: $garmentImage)
 }
 
 // Back Button
 
-Button {
+Button("Back") {
 dismiss()
-} label: {
-Text("Back")
-.font(
-.system(size: 18, weight: .semibold)
-)
-.foregroundColor(.black)
-.frame(maxWidth: .infinity)
-.frame(height: 42)
-.contentShape(Rectangle())
 }
-.buttonStyle(.plain)
+.buttonStyle(SecondaryButtonStyle())
 }
 .padding(.horizontal, 24)
 .padding(.top, 10)
@@ -217,19 +199,28 @@ Text("Back")
         showResult = true
     }
 }
-.navigationDestination(isPresented: $showResult) {
-  switch data.bodyShape {
-    case .pear:
-        Peartype()
-  case .hourglass:
-      HourglassType()
-  case .apple:
-      Appleshape()
-  case .invertedTriangle:
-      InvertedTringleType()
-    default:
-        Text("Coming soon")
+// Back from the results: clear the picker selection so another photo
+// (or the same one again) can be analyzed.
+.onChange(of: showResult) { _, isShowing in
+    if !isShowing {
+        selectedPhoto = nil
     }
+}
+.navigationDestination(isPresented: $showResult) {
+  if let garmentImage {
+    switch data.bodyShape {
+      case .pear:
+          Peartype(image: garmentImage, backToProfile: backToProfile)
+      case .hourglass:
+          HourglassType(image: garmentImage, backToProfile: backToProfile)
+      case .apple:
+          Appleshape(image: garmentImage, backToProfile: backToProfile)
+      case .invertedTriangle:
+          InvertedTringleType(image: garmentImage, backToProfile: backToProfile)
+      default:
+          Text("Coming soon")
+    }
+  }
 }
     
 .photosPicker(

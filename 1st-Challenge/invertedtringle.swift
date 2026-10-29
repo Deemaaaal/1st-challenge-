@@ -23,14 +23,12 @@ struct InvertedTringleType: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                Text("Inverted Triangle-Type")
+                Text("Your Results")
                     .font(.title)
                     .fontWeight(.bold)
                     .padding(.top, 20)
 
-                GarmentResult(image: image, bodyShape: .invertedTriangle, illustration: "IntevedtringleShape")
-
-                Spacer()
+                GarmentResult(image: image, bodyShape: .invertedTriangle)
 
                 VStack(spacing: 6) {
                     // Retake photo يودّي للكاميرا

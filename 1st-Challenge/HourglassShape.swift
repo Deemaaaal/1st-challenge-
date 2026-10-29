@@ -24,14 +24,12 @@ struct HourglassType: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {
-                Text("Hourglass-Type")
+                Text("Your Results")
                     .font(.title)
                     .fontWeight(.bold)
                     .padding(.top, 20)
 
-                GarmentResult(image: image, bodyShape: .hourglass, illustration: "HourglassShape")
-
-                Spacer()
+                GarmentResult(image: image, bodyShape: .hourglass)
 
                 VStack(spacing: 6) {
                     // 🆕 يودّي للكاميرا

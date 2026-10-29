@@ -97,20 +97,13 @@ struct measurementsView2: View {
                     MeasurementsView()
                 } label: {
                     Text("Next")
-                        .font(.title3)
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(data.page1Complete
-                                    ? Color(red: 0.82, green: 0.45, blue: 0.12)
-                                    : Color(red: 0.90, green: 0.75, blue: 0.65))
-                        .cornerRadius(30)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(PrimaryButtonStyle())
                 .disabled(!data.page1Complete)
                 .animation(.easeInOut(duration: 0.3), value: data.page1Complete)
-                .padding(.bottom, 110)
+                // Same width and height from the bottom as the main button on other screens
+                .padding(.horizontal, 8)
+                .padding(.bottom, 54)
             }
             .padding(.horizontal, 16)
         }

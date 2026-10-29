@@ -26,7 +26,12 @@ struct FitVerdict {
 
     let kind: Kind
     let why: String
-    let alternative: String?
+    /// Shown in the highlighted panel under WHY.
+    let tip: String?
+
+    var tipLabel: String {
+        kind == .suitable ? "WHY IT WORKS" : "TRY INSTEAD"
+    }
 
     var title: String {
         switch kind {
@@ -221,6 +226,16 @@ enum FashionRules {
 
         let normalizedCategory = normalizeCategory(garment.category)
 
+        return rules(for: normalizedCategory, bodyShape: bodyShape).filter { rule in
+            matchedKeyword(of: rule, in: garment) != nil
+        }
+    }
+
+    /// The first keyword of the rule found in the garment's description.
+    static func matchedKeyword(
+        of rule: StyleRule,
+        in garment: GarmentDescription
+    ) -> String? {
         let garmentText = """
         \(garment.category)
         \(garment.shape ?? "")
@@ -230,10 +245,8 @@ enum FashionRules {
         \(garment.overallStyle)
         """
 
-        return rules(for: normalizedCategory, bodyShape: bodyShape).filter { rule in
-            rule.keywords.contains { keyword in
-                garmentText.localizedCaseInsensitiveContains(keyword)
-            }
+        return rule.keywords.first { keyword in
+            garmentText.localizedCaseInsensitiveContains(keyword)
         }
     }
 
@@ -250,16 +263,21 @@ enum FashionRules {
             return FitVerdict(
                 kind: .notClothing,
                 why: "We couldn't find a garment in this photo. Try a clear photo of one item.",
-                alternative: nil
+                tip: nil
             )
         }
 
-        // Matching rule → Suitable, with the rule's reason.
+        // "These jeans have" vs "This dress has"
+        let isPlural = ["jeans", "trousers", "shorts"].contains(category)
+        let subject = isPlural ? "These \(category)" : "This \(category)"
+
+        // Matching rule → Suitable: what matched, and the rule's reason.
         if let match = recommendations(for: garment, bodyShape: bodyShape).first {
+            let keyword = matchedKeyword(of: match, in: garment) ?? ""
             return FitVerdict(
                 kind: .suitable,
-                why: match.reason,
-                alternative: nil
+                why: "\(subject) \(isPlural ? "have" : "has") a detail often suggested for your shape: \(keyword).",
+                tip: match.reason
             )
         }
 
@@ -267,15 +285,15 @@ enum FashionRules {
         if let rule = rules(for: category, bodyShape: bodyShape).first {
             return FitVerdict(
                 kind: .considerAlternative,
-                why: "This \(category) doesn't show the cut or details usually suggested for your shape.",
-                alternative: "\(rule.recommendation) \(rule.reason)"
+                why: "\(subject) \(isPlural ? "don't" : "doesn't") show the cut or details usually suggested for your shape.",
+                tip: "\(rule.recommendation) \(rule.reason)"
             )
         }
 
         return FitVerdict(
             kind: .noTip,
             why: "No specific tip for this item yet.",
-            alternative: nil
+            tip: nil
         )
     }
 }
