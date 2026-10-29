@@ -147,7 +147,7 @@ showPicker = true
 Text(
 "Photos stay on this iPhone and are not uploaded"
 )
-.font(.system(size: 11))
+.font(.system(size: 12))
 .foregroundColor(.gray)
 .multilineTextAlignment(.center)
 .frame(maxWidth: .infinity)

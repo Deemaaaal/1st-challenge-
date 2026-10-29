@@ -32,9 +32,24 @@ enum GarmentAnalyzer {
             generating: GarmentDescription.self,
             options: GenerationOptions(samplingMode: .greedy)
         ) {
-            "Describe the main garment in this photo."
+            """
+            First name the main thing shown in this photo. \
+            Then decide whether it is a clothing garment. \
+            If it is not, set isClothing to false and category to "not clothing". \
+            If it is, describe the main garment.
+            """
             Attachment(image)
         }
+
+        #if DEBUG
+        // Shows exactly what the model returned, to check results in Xcode's console.
+        let g = response.content
+        print("""
+        [GarmentAnalyzer] subject: \(g.subject) | isClothing: \(g.isClothing) | category: \(g.category) \
+        | shape: \(g.shape ?? "nil") | fit: \(g.fit ?? "nil") | neckline: \(g.neckline ?? "nil") \
+        | details: \(g.designDetails) | style: \(g.overallStyle)
+        """)
+        #endif
 
         return response.content
     }

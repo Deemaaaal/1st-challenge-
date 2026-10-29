@@ -259,7 +259,7 @@ enum FashionRules {
 
         let category = normalizeCategory(garment.category)
 
-        if category == "not clothing" {
+        if !garment.isClothing || category == "not clothing" {
             return FitVerdict(
                 kind: .notClothing,
                 why: "We couldn't find a garment in this photo. Try a clear photo of one item.",
@@ -270,23 +270,44 @@ enum FashionRules {
         // "These jeans have" vs "This dress has"
         let isPlural = ["jeans", "trousers", "shorts"].contains(category)
         let subject = isPlural ? "These \(category)" : "This \(category)"
+        let has = isPlural ? "have" : "has"
+        let shapeName = "your \(bodyShape.title) shape"
 
         // Matching rule → Suitable: what matched, and the rule's reason.
         if let match = recommendations(for: garment, bodyShape: bodyShape).first {
             let keyword = matchedKeyword(of: match, in: garment) ?? ""
+            let feature = Feature(of: match)
             return FitVerdict(
                 kind: .suitable,
-                why: "\(subject) \(isPlural ? "have" : "has") a detail often suggested for your shape: \(keyword).",
+                why: "\(subject) \(has) \(feature.phrase(for: keyword)), which \(feature == .details ? "are" : "is") often suggested for \(shapeName).",
                 tip: match.reason
             )
         }
 
-        // Rules exist for this item but none match → suggest the rule's recommendation.
+        // Rules exist for this item but none match → explain what was seen,
+        // what the table suggests instead, and the table's reason.
         if let rule = rules(for: category, bodyShape: bodyShape).first {
+            let feature = Feature(of: rule)
+            let suggested = feature.suggestedPhrase(for: rule.keywords)
+            let reason = lowercasingFirstLetter(rule.reason)
+
+            let why: String
+            if feature == .details {
+                why = "\(subject) \(isPlural ? "don't" : "doesn't") show \(suggested). These are usually suggested for \(shapeName), as \(reason)"
+            } else {
+                let seen: String
+                if let detected = feature.detectedValue(in: garment) {
+                    seen = "\(subject) \(has) \(feature.phrase(for: detected))."
+                } else {
+                    seen = "The \(feature.name) isn't clear in this photo."
+                }
+                why = "\(seen) For \(shapeName), \(suggested) \(feature.verb(for: rule.keywords)) usually suggested, as \(reason)"
+            }
+
             return FitVerdict(
                 kind: .considerAlternative,
-                why: "\(subject) \(isPlural ? "don't" : "doesn't") show the cut or details usually suggested for your shape.",
-                tip: "\(rule.recommendation) \(rule.reason)"
+                why: why,
+                tip: rule.recommendation
             )
         }
 
@@ -295,5 +316,95 @@ enum FashionRules {
             why: "No specific tip for this item yet.",
             tip: nil
         )
+    }
+
+    // MARK: - Wording helpers
+
+    /// Which part of the garment a rule is about, so the WHY text can name it.
+    private enum Feature {
+        case neckline, cut, details
+
+        private static let necklines: Set = ["v-neck", "halter", "round", "scoop", "boat", "square", "high", "off-shoulder"]
+        private static let cuts: Set = ["straight", "a-line", "fit-and-flare", "pencil", "full", "tapered", "wide-leg", "flared", "bootcut"]
+
+        init(of rule: StyleRule) {
+            let keyword = rule.keywords.first ?? ""
+            if Self.necklines.contains(keyword) {
+                self = .neckline
+            } else if Self.cuts.contains(keyword) {
+                self = .cut
+            } else {
+                self = .details
+            }
+        }
+
+        var name: String {
+            switch self {
+            case .neckline: return "neckline"
+            case .cut:      return "cut"
+            case .details:  return "detailing"
+            }
+        }
+
+        func detectedValue(in garment: GarmentDescription) -> String? {
+            switch self {
+            case .neckline: return garment.neckline
+            case .cut:      return garment.shape
+            case .details:  return nil
+            }
+        }
+
+        /// "a round neckline", "a V-neck", "an A-line cut", "wrap details"
+        func phrase(for keyword: String) -> String {
+            let name = FashionRules.displayName(keyword)
+            switch self {
+            case .neckline:
+                return keyword.contains("neck")
+                    ? "\(FashionRules.article(for: name)) \(name)"
+                    : "\(FashionRules.article(for: name)) \(name) neckline"
+            case .cut:
+                return "\(FashionRules.article(for: name)) \(name) cut"
+            case .details:
+                return "\(name) details"
+            }
+        }
+
+        /// "A-line or fit-and-flare cuts", "a V-neck", "V-neck or halter necklines"
+        func suggestedPhrase(for keywords: [String]) -> String {
+            if self == .neckline, keywords.count == 1 {
+                return phrase(for: keywords[0])
+            }
+            let list = keywords.map(FashionRules.displayName).formatted(.list(type: .or))
+            switch self {
+            case .neckline: return "\(list) necklines"
+            case .cut:      return "\(list) cuts"
+            case .details:  return "\(list) details"
+            }
+        }
+
+        func verb(for keywords: [String]) -> String {
+            self == .neckline && keywords.count == 1 ? "is" : "are"
+        }
+    }
+
+    /// How a keyword reads in a sentence.
+    fileprivate static func displayName(_ keyword: String) -> String {
+        switch keyword {
+        case "a-line": return "A-line"
+        case "v-neck": return "V-neck"
+        case "waist":  return "waist-defining"
+        case "fitted": return "fitted-waist"
+        default:       return keyword
+        }
+    }
+
+    fileprivate static func article(for word: String) -> String {
+        guard let first = word.lowercased().first else { return "a" }
+        return "aeiou".contains(first) ? "an" : "a"
+    }
+
+    private static func lowercasingFirstLetter(_ text: String) -> String {
+        guard let first = text.first else { return text }
+        return first.lowercased() + text.dropFirst()
     }
 }
